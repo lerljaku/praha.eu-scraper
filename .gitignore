@@ -6,3 +6,6 @@ tempdata
 *~lock*
 .Rhistory
 settings.py
+.venv
+venv
+.idea

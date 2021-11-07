@@ -133,7 +133,7 @@ def get_all_vote_events(period_id):
                     ve['identifier'] = ve['id']
                     vote_events.append(ve)
             else:
-                raise(Exception)
+                raise Exception(rr.content.decode('utf-8'))
     else:
-        raise(Exception)
+        raise Exception(r.content.decode('utf-8'))
     return vote_events

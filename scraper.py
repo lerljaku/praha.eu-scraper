@@ -1,6 +1,8 @@
 """Scrapes vote events from praha.eu and updates github datapackage."""
 
 import csv
+import os.path
+
 from datapackage import Package  # v0.8.3
 import git
 
@@ -25,7 +27,8 @@ resources_attributes = {
 path = "data/"  # from this script to datapackage.json
 
 # repo settings
-repo = git.Repo(settings.git_dir)
+git_dir = os.path.dirname(__file__)
+repo = git.Repo(git_dir)
 git_ssh_identity_file = settings.ssh_file
 o = repo.remotes.origin
 git_ssh_cmd = 'ssh -i %s' % git_ssh_identity_file
@@ -44,8 +47,9 @@ for term in terms:
         "votes": 0
     }
     # get datapackage from github
-    datapackage_url = "https://raw.githubusercontent.com/michalskop/praha.eu-scraper/master/data/" + term + "/datapackage.json"
-    dp = Package(datapackage_url)
+    # datapackage_url = "https://raw.githubusercontent.com/michalskop/praha.eu-scraper/master/data/" + term + "/datapackage.json"
+
+    dp = Package(os.path.join(git_dir, 'data', term, 'datapackage.json'))
 
     # get all vote events
     ves = utils.get_all_vote_events(terms[term])
@@ -109,13 +113,14 @@ for term in terms:
     for k in resources_attributes:
         for resource in dp.resources:
             if resource.descriptor['name'] == k:
-                with open(settings.git_dir + path + term + '/' + resource.descriptor['path'], "w") as fout:
+                path = os.path.join(git_dir, path, term, resource.descriptor['path'])
+                with open(path, "w") as fout:
                     fieldnames = resources_attributes[k]
                     csvdw = csv.DictWriter(fout, fieldnames)
                     csvdw.writeheader()
                     for row in tables[k]:
                         csvdw.writerow(row)
-                a = repo.git.add(settings.git_dir + path + term + '/' + resource.descriptor['path'])
+                a = repo.git.add(path)
     with repo.git.custom_environment(GIT_COMMITTER_NAME=settings.bot_name, GIT_COMMITTER_EMAIL=settings.bot_email):
         repo.git.commit(message="happily updating data %s%s" % (term, happy_text), author="%s <%s>" % (settings.bot_name, settings.bot_email))
     with repo.git.custom_environment(GIT_SSH_COMMAND=git_ssh_cmd):
